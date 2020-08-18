@@ -5,6 +5,7 @@ from django import forms
 
 # Models
 from django.contrib.auth.models import User
+from users.models import Profile
 
 class SignupForm(forms.Form):
     """Sign up form."""
@@ -27,7 +28,7 @@ class SignupForm(forms.Form):
         """Username must be unique."""
         username = self.cleaned_data['username']
         #Query a la db para ver si existe
-        username_taken = User.object.filter(username=username).exist()
+        username_taken = User.objects.filter(username=username).exists()
         if username_taken:
             raise forms.ValidationError('username is already in use')
         return username
@@ -42,13 +43,12 @@ class SignupForm(forms.Form):
             raise forms.ValidationError('Passwords do not match')
 
         return data
-
-
-class ProfileForm(forms.Form):
-    """Profile form."""
     
-    website = forms.URLField(max_length=200, required=True)
-    biography = forms.CharField(max_length=500, required=False)
-    phone_number = forms.CharField(max_length=20, required=False)
-    picture = forms.ImageField()
-    
+    def save(self):
+        """Create user and Profile."""
+        data = self.cleaned_data
+        data.pop('password_confirmation')
+        
+        user = User.objects.create_user(**data)
+        profile = Profile(user=user)
+        profile.save()
